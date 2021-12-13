@@ -1,6 +1,6 @@
 VERSION=1.0.0
 
-revsocks:
+bin:
 	go build
 
 dep:
@@ -16,7 +16,7 @@ ver:
 
 gittag:
 	git tag v$(VERSION)
-	git push --tags origin master
+	git push --tags origin main
 
 clean:
 	rm -rf dist
