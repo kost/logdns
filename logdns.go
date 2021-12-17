@@ -12,6 +12,7 @@ import (
 var ip string
 var VerboseLevel bool
 var Port int
+var myttl string
 
 func parseQuery(m *dns.Msg) {
 	for _, q := range m.Question {
@@ -21,7 +22,7 @@ func parseQuery(m *dns.Msg) {
 		switch q.Qtype {
 		case dns.TypeA:
 			log.Printf("Query for %s\n", q.Name)
-			rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
+			rr, err := dns.NewRR(fmt.Sprintf("%s %s A %s", q.Name, myttl, ip))
 			if err == nil {
 				m.Answer = append(m.Answer, rr)
 				if VerboseLevel {
@@ -50,6 +51,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 
 func main() {
 	returnip := flag.String("return", "127.0.0.1", "what address to return")
+        ttl := flag.String("ttl","3600", "Set a custom ttl for returned records")
         listen := flag.String("listen", "0.0.0.0", "listen address")
 	resolve := flag.String("resolve", ".", "which domains to respond, e.g. service.")
         verbose := flag.Bool("verbose", false, "be verbose")
@@ -59,6 +61,7 @@ func main() {
 
 	VerboseLevel=*verbose
 	ip=*returnip
+        myttl = *ttl
 
 	dns.HandleFunc(*resolve, handleDnsRequest)
 
