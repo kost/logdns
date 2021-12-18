@@ -1,10 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
-	"flag"
 
 	"github.com/miekg/dns"
 )
@@ -13,6 +14,7 @@ var ip string
 var VerboseLevel bool
 var Port int
 var myttl string
+var logfilename string
 
 func parseQuery(m *dns.Msg) {
 	for _, q := range m.Question {
@@ -51,17 +53,18 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 
 func main() {
 	returnip := flag.String("return", "127.0.0.1", "what address to return")
-        ttl := flag.String("ttl","3600", "Set a custom ttl for returned records")
-        listen := flag.String("listen", "0.0.0.0", "listen address")
+	ttl := flag.String("ttl", "3600", "Set a custom ttl for returned records")
+	listen := flag.String("listen", "0.0.0.0", "listen address")
 	resolve := flag.String("resolve", ".", "which domains to respond, e.g. service.")
-        verbose := flag.Bool("verbose", false, "be verbose")
-        flag.IntVar(&Port, "port", 53, "port to listen")
+	verbose := flag.Bool("verbose", false, "be verbose")
+	flag.IntVar(&Port, "port", 53, "port to listen")
+	flag.StringVar(&logfilename, "logfile", "", "Log File name")
 
-        flag.Parse()
+	flag.Parse()
 
-	VerboseLevel=*verbose
-	ip=*returnip
-        myttl = *ttl
+	VerboseLevel = *verbose
+	ip = *returnip
+	myttl = *ttl
 
 	dns.HandleFunc(*resolve, handleDnsRequest)
 
@@ -69,6 +72,14 @@ func main() {
 	listenstr := *listen + ":" + strconv.Itoa(Port)
 	server := &dns.Server{Addr: listenstr, Net: "udp"}
 	log.Printf("Starting at %s\n", listenstr)
+
+	if len(logfilename) > 0 {
+		file, err := os.OpenFile(logfilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.SetOutput(file)
+	}
 	err := server.ListenAndServe()
 	defer server.Shutdown()
 	if err != nil {
